@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Facciata di un edificio verso il cielo, immagine segnaposto">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="1" x2="0.6" y2="0">
+      <stop offset="0%" stop-color="#1453A4"/>
+      <stop offset="55%" stop-color="#7FA8D6"/>
+      <stop offset="100%" stop-color="#E4EEF8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <g opacity="0.22" stroke="#153853" stroke-width="2" fill="none">
+    <line x1="120" y1="0" x2="420" y2="900"/>
+    <line x1="260" y1="0" x2="560" y2="900"/>
+    <line x1="0" y1="120" x2="500" y2="900"/>
+    <line x1="900" y1="0" x2="1200" y2="900"/>
+    <line x1="1050" y1="0" x2="1350" y2="900"/>
+    <line x1="1250" y1="0" x2="1600" y2="620"/>
+  </g>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="28" fill="#153853" opacity="0.28" letter-spacing="4">IMMAGINE SEGNAPOSTO</text>
+</svg>
