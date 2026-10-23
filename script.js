@@ -64,7 +64,8 @@
 
   var feedback = document.getElementById('contact-feedback');
 
-  var SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwKqWqF7TfD7_Nq-0W2296nrUWSH7D5dy51kNgTzdzv_ABdy7KxvkZd2lIlyMIqQrsd/exec';
+  // Ricevitore PHP sullo stesso hosting: salva in SharePoint (Microsoft 365).
+  var ENDPOINT_INVIO = 'api/invio.php';
 
   function val(name) {
     var el = form.elements[name];
@@ -92,7 +93,7 @@
       submitBtn.textContent = 'Invio…';
     }
 
-    var invio = fetch(SHEET_ENDPOINT, {
+    var invio = fetch(ENDPOINT_INVIO, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -103,7 +104,8 @@
         telefono: val('Telefono') || '—',
         area: val('Area') || '—',
         messaggio: val('Messaggio'),
-        consenso: 'Sì'
+        consenso: 'Sì',
+        hp: val('sito_web')
       })
     }).then(function (r) {
       if (!r.ok) { throw new Error('HTTP ' + r.status); }
@@ -147,38 +149,50 @@
 
   window.evolyitConsent = { get: getConsent };
 
-  var GA_MEASUREMENT_ID = 'G-8HV6Y2RN3Y'; 
+  // Microsoft Clarity (statistiche). Si carica solo dopo il consenso ai cookie.
+  // Inserire l'ID del progetto Clarity: finché resta 'INSERIRE_ID_CLARITY'
+  // non viene caricato nulla (interruttore di sicurezza).
+  var CLARITY_PROJECT_ID = 'INSERIRE_ID_CLARITY';
 
-  var gaCaricato = false;
+  var clarityCaricato = false;
 
   function ambienteLocale() {
     return !location.hostname || location.hostname === 'localhost' ||
       location.hostname === '127.0.0.1';
   }
 
+  function clarityAttivo() {
+    return /^[a-z0-9]{6,20}$/i.test(CLARITY_PROJECT_ID) &&
+      CLARITY_PROJECT_ID !== 'INSERIRE_ID_CLARITY' && !ambienteLocale();
+  }
+
   function loadAnalytics() {
-    if (gaCaricato || GA_MEASUREMENT_ID === 'G-XXXXXXXXXX' || ambienteLocale()) {
+    if (!clarityAttivo()) {
       return;
     }
-    gaCaricato = true;
-    window['ga-disable-' + GA_MEASUREMENT_ID] = false; 
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function () { window.dataLayer.push(arguments); };
-    window.gtag('js', new Date());
-    window.gtag('config', GA_MEASUREMENT_ID);
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_MEASUREMENT_ID;
-    document.head.appendChild(s);
+    if (!clarityCaricato) {
+      clarityCaricato = true;
+      window.clarity = window.clarity || function () {
+        (window.clarity.q = window.clarity.q || []).push(arguments);
+      };
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.clarity.ms/tag/' + encodeURIComponent(CLARITY_PROJECT_ID);
+      document.head.appendChild(s);
+    }
+    window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: 'granted' });
   }
 
   function stopAnalytics() {
-    window['ga-disable-' + GA_MEASUREMENT_ID] = true;
+    if (typeof window.clarity === 'function') {
+      window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: 'denied' });
+      window.clarity('consent', false);
+    }
     var righe = document.cookie.split('; ');
     var parti = location.hostname.split('.');
     for (var i = 0; i < righe.length; i++) {
       var nome = righe[i].split('=')[0];
-      if (nome.indexOf('_ga') !== 0) { continue; }
+      if (nome !== '_clck' && nome !== '_clsk' && nome.indexOf('_ga') !== 0) { continue; }
       document.cookie = nome + '=; max-age=0; path=/';
       for (var j = 0; j < parti.length - 1; j++) {
         document.cookie = nome + '=; max-age=0; path=/; domain=.' + parti.slice(j).join('.');
@@ -187,9 +201,14 @@
   }
 
   window.evolyitTrack = function (nome, parametri) {
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', nome, parametri || {});
+    if (!clarityCaricato || typeof window.clarity !== 'function') {
+      return;
     }
+    var evento = nome;
+    if (parametri && parametri.numero) {
+      evento = nome + '_' + parametri.numero;
+    }
+    window.clarity('event', evento);
   };
 
   function hideBanner() {
