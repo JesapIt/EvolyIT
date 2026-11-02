@@ -364,7 +364,9 @@
     return nav;
   }
 
-  var SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwKqWqF7TfD7_Nq-0W2296nrUWSH7D5dy51kNgTzdzv_ABdy7KxvkZd2lIlyMIqQrsd/exec';
+  // Ricevitori PHP sullo stesso hosting: salvano e leggono da SharePoint (Microsoft 365).
+  var ENDPOINT_INVIO = 'api/invio.php';
+  var ENDPOINT_DOMANDE = 'api/domande.php';
 
   function buildPayload() {
     return {
@@ -377,7 +379,7 @@
   }
 
   function submitAssessment(payload) {
-    return fetch(SHEET_ENDPOINT, {
+    return fetch(ENDPOINT_INVIO, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -387,7 +389,8 @@
         consenso: payload.contatto.consenso ? 'Sì' : 'No',
         risposte: payload.answers.map(function (a) {
           return { domanda: a.domanda, risposta: a.risposta || '—' };
-        })
+        }),
+        hp: ''
       })
     }).then(function (r) {
       if (!r.ok) { throw new Error('HTTP ' + r.status); }
@@ -568,7 +571,7 @@
   }
 
   function fetchDomande(msTimeout) {
-    var url = SHEET_ENDPOINT + '?nocache=' + Date.now();
+    var url = ENDPOINT_DOMANDE + (ENDPOINT_DOMANDE.indexOf('?') === -1 ? '?' : '&') + 'nocache=' + Date.now();
     if (!window.AbortController) { return fetch(url); }
     var controllo = new AbortController();
     var timer = window.setTimeout(function () { controllo.abort(); }, msTimeout);
@@ -610,7 +613,7 @@
     } catch (e) { return null; }
   }
 
-  if (SHEET_ENDPOINT && window.fetch) {
+  if (ENDPOINT_DOMANDE && window.fetch) {
     attesaDomande = scaricaDomande(3).then(function (data) {
       if (data && data.ok === true && data.domande && data.domande.length) {
         applicaDomandeRemote(data.domande);
